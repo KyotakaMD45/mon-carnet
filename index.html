@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b7a4b">
+<title>Mon Carnet</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{
+  --bg:#f6f5f1; --surface:#fff; --fg:#1b221e; --muted:#5d6b63; --line:#dfe2db;
+  --green:#0b7a4b; --green-soft:#e2f2ea; --orange:#e8730c; --orange-soft:#fdeedf; --red:#b42318; --red-soft:#fdecea;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111613; --surface:#1a201c; --fg:#e9eee9; --muted:#9db0a5; --line:#2d3732;
+  --green:#3fc489; --green-soft:#173326; --orange:#ff9a45; --orange-soft:#3a2614; --red:#ff7b6e; --red-soft:#3a1915; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 var(--font)}
+body{padding:env(safe-area-inset-top,0) 0 calc(env(safe-area-inset-bottom,0) + 84px)}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:620px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-left,0)) 16px max(16px,env(safe-area-inset-right,0));display:flex;flex-direction:column;gap:14px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+header.top h1{margin:0;font-size:1.35rem}
+header.top .shop{color:var(--muted);font-size:.9rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.big{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.label{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.04em}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+.mini{background:var(--bg);border-radius:12px;padding:10px 12px}
+.mini b{display:block;font-size:1.1rem;font-variant-numeric:tabular-nums}
+.mini span{color:var(--muted);font-size:.8rem}
+.search{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.list{display:flex;flex-direction:column;gap:8px}
+.client{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;text-align:left;width:100%}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-weight:800;flex:none}
+.client .info{flex:1;min-width:0}
+.client .name,.client .sub{display:block}
+.client .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.client .sub{color:var(--muted);font-size:.85rem}
+.amount{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.due{color:var(--red)} .ok{color:var(--green)}
+.btn{border:0;border-radius:12px;padding:14px 16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;text-align:center}
+.btn.primary{background:var(--green);color:#fff}
+.btn.orange{background:var(--orange);color:#fff}
+.btn.wa{background:#1fa855;color:#fff}
+.btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--fg)}
+.btn.danger{background:var(--red-soft);color:var(--red)}
+.btn.block{width:100%}
+.btn:focus-visible,.chip:focus-visible,.client:focus-visible,input:focus{outline:3px solid var(--orange);outline-offset:1px}
+nav.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px max(8px,env(safe-area-inset-left,0)) calc(8px + env(safe-area-inset-bottom,0));z-index:5}
+nav.bar a{flex:1;text-align:center;text-decoration:none;color:var(--muted);font-size:.8rem;font-weight:600;padding:6px 4px;border-radius:10px}
+nav.bar a.on{color:var(--green);background:var(--green-soft)}
+nav.bar svg{display:block;margin:0 auto 2px;width:24px;height:24px}
+.fab{position:fixed;right:max(18px,env(safe-area-inset-right,0));bottom:calc(92px + env(safe-area-inset-bottom,0));border-radius:999px;padding:16px 20px;box-shadow:0 6px 18px rgba(0,0,0,.18);z-index:6}
+.empty{color:var(--muted);text-align:center;padding:28px 12px}
+.hist{display:flex;flex-direction:column}
+.mv{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.mv:last-child{border-bottom:0}
+.mv .what{min-width:0}
+.mv .what small{display:block;color:var(--muted)}
+.del{background:none;border:0;color:var(--muted);cursor:pointer;font-size:.8rem;padding:2px 0;text-decoration:underline}
+/* fenêtre (modal) */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--surface);width:100%;max-width:620px;border-radius:20px 20px 0 0;padding:18px max(16px,env(safe-area-inset-left,0)) calc(18px + env(safe-area-inset-bottom,0));display:flex;flex-direction:column;gap:12px;max-height:92vh;overflow:auto}
+.sheet h2{margin:0;font-size:1.2rem}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600}
+.field input,.field textarea,.field select{padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);width:100%}
+.money input{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);padding:10px 14px;border-radius:999px;cursor:pointer;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--green-soft);border-color:var(--green);color:var(--fg)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0));background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:12px;z-index:30;font-weight:600;max-width:90vw;text-align:center}
+.hint{color:var(--muted);font-size:.88rem}
+table.rep{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+table.rep td{padding:8px 0;border-bottom:1px solid var(--line)}
+table.rep td:last-child{text-align:right;font-weight:700}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<button class="btn primary fab" id="fab" hidden>+ Client</button>
+
+<nav class="bar" id="nav">
+  <a href="#accueil" data-r="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Clients</a>
+  <a href="#rapport" data-r="rapport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Rapport</a>
+  <a href="#reglages" data-r="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Réglages</a>
+</nav>
+
+<script>
+"use strict";
+/* ================= Données (gardées sur le téléphone) ================= */
+const KEY = "mon-carnet-v1";
+const MOYENS = ["Espèces", "Wave", "Orange Money", "MTN MoMo", "Moov Money"];
+let S = load();
+
+function load(){
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.clients) return d; } catch (e) {}
+  return { boutique: "", lienPaiement: "", clients: [], mouvements: [], derniereSauvegarde: null };
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast("Mémoire du téléphone pleine : fais une sauvegarde dans Réglages."); }
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ================= Outils ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fcfa = n => Math.round(n || 0).toLocaleString("fr-FR").replace(/ | /g, " ") + " FCFA";
+const today = () => new Date().toISOString().slice(0, 10);
+const dayOf = iso => (iso || "").slice(0, 10);
+const fmtDate = iso => new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }) + " " + new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const initials = n => (n || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+const parseMoney = v => { const n = Number(String(v).replace(/[^\d]/g, "")); return Number.isFinite(n) ? n : 0; };
+
+function solde(clientId){
+  let s = 0;
+  for (const m of S.mouvements) if (m.clientId === clientId) s += m.type === "credit" ? m.montant : -m.montant;
+  return s;
+}
+function dernier(clientId){
+  let d = null;
+  for (const m of S.mouvements) if (m.clientId === clientId && (!d || m.date > d)) d = m.date;
+  return d;
+}
+function waNumber(tel){
+  const d = String(tel || "").replace(/[^\d]/g, "");
+  if (!d) return "";
+  if (d.startsWith("225") && d.length === 13) return d;
+  if (d.length === 10) return "225" + d;
+  return d;
+}
+function toast(msg){
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+/* ================= Navigation ================= */
+function route(){
+  const h = location.hash.replace("#", "") || "accueil";
+  const [r, id] = h.split("/");
+  document.querySelectorAll("nav.bar a").forEach(a => a.classList.toggle("on", a.dataset.r === (r === "client" ? "accueil" : r)));
+  $("#fab").hidden = r !== "accueil";
+  if (r === "client" && id) return viewClient(id);
+  if (r === "rapport") return viewRapport();
+  if (r === "reglages") return viewReglages();
+  return viewAccueil();
+}
+window.addEventListener("hashchange", route);
+
+/* ================= Écran : Clients ================= */
+let recherche = "";
+function viewAccueil(){
+  const totalDu = S.clients.reduce((s, c) => s + Math.max(0, solde(c.id)), 0);
+  const nbDoivent = S.clients.filter(c => solde(c.id) > 0).length;
+  const t = today();
+  const encaisse = S.mouvements.filter(m => m.type === "paiement" && dayOf(m.date) === t).reduce((s, m) => s + m.montant, 0);
+  const credite = S.mouvements.filter(m => m.type === "credit" && dayOf(m.date) === t).reduce((s, m) => s + m.montant, 0);
+  $("#app").innerHTML = `
+    <header class="top"><div><h1>Mon Carnet</h1><div class="shop">${esc(S.boutique || "Ma boutique")}</div></div></header>
+    <section class="card">
+      <div class="label">On te doit au total</div>
+      <div class="big due" id="totalDu">${fcfa(totalDu)}</div>
+      <div class="hint">${nbDoivent} client${nbDoivent > 1 ? "s" : ""} doi${nbDoivent > 1 ? "vent" : "t"} de l'argent</div>
+      <div class="row" style="margin-top:12px">
+        <div class="mini"><b class="ok">${fcfa(encaisse)}</b><span>reçu aujourd'hui</span></div>
+        <div class="mini"><b>${fcfa(credite)}</b><span>donné à crédit aujourd'hui</span></div>
+      </div>
+    </section>
+    <input class="search" id="q" type="search" placeholder="Chercher un client…" value="${esc(recherche)}" aria-label="Chercher un client">
+    <div class="list" id="liste"></div>`;
+  $("#q").addEventListener("input", e => { recherche = e.target.value; listeClients(); });
+  listeClients();
+}
+function listeClients(){
+  const q = recherche.trim().toLowerCase();
+  const rows = S.clients
+    .map(c => ({ c, s: solde(c.id), d: dernier(c.id) }))
+    .filter(x => !q || (x.c.nom + " " + (x.c.tel || "") + " " + (x.c.quartier || "")).toLowerCase().includes(q))
+    .sort((a, b) => (b.s > 0) - (a.s > 0) || b.s - a.s || (b.d || "").localeCompare(a.d || ""));
+  if (!S.clients.length) {
+    $("#liste").innerHTML = `<div class="empty"><b>Ton carnet est vide.</b><br>Appuie sur « + Client » pour ajouter ton premier client.</div>`;
+    return;
+  }
+  if (!rows.length) { $("#liste").innerHTML = `<div class="empty">Aucun client ne correspond.</div>`; return; }
+  $("#liste").innerHTML = rows.map(({ c, s, d }) => `
+    <button class="client" data-id="${c.id}">
+      <span class="avatar">${esc(initials(c.nom))}</span>
+      <span class="info"><span class="name">${esc(c.nom)}</span><span class="sub">${esc([c.quartier, d ? "dernier : " + fmtDate(d) : "aucun mouvement"].filter(Boolean).join(" · "))}</span></span>
+      <span class="amount ${s > 0 ? "due" : "ok"}">${s > 0 ? fcfa(s) : s < 0 ? "avance " + fcfa(-s) : "soldé"}</span>
+    </button>`).join("");
+  document.querySelectorAll(".client").forEach(b => b.onclick = () => location.hash = "client/" + b.dataset.id);
+}
+$("#fab").onclick = () => formClient();
+
+/* ================= Écran : un client ================= */
+function viewClient(id){
+  const c = S.clients.find(x => x.id === id);
+  if (!c) { location.hash = "accueil"; return; }
+  const s = solde(id);
+  const mvs = S.mouvements.filter(m => m.clientId === id).sort((a, b) => b.date.localeCompare(a.date));
+  const num = waNumber(c.tel);
+  $("#app").innerHTML = `
+    <header class="top"><button class="btn ghost" id="back">← Retour</button><button class="btn ghost" id="edit">Modifier</button></header>
+    <section class="card">
+      <div class="row" style="align-items:center"><span class="avatar" style="flex:none">${esc(initials(c.nom))}</span>
+        <div style="flex:5"><div style="font-weight:800;font-size:1.2rem">${esc(c.nom)}</div><div class="hint">${esc([c.tel, c.quartier].filter(Boolean).join(" · ") || "Pas de téléphone")}</div></div></div>
+      <div class="label" style="margin-top:14px">${s >= 0 ? "Il te doit" : "Il a payé en avance"}</div>
+      <div class="big ${s > 0 ? "due" : "ok"}">${fcfa(Math.abs(s))}</div>
+    </section>
+    <div class="row">
+      <button class="btn orange" id="addCredit">+ Crédit</button>
+      <button class="btn primary" id="addPay">Paiement reçu</button>
+    </div>
+    ${s > 0 ? (num
+      ? `<a class="btn wa block" id="rappel" target="_blank" rel="noopener" href="https://wa.me/${num}?text=${encodeURIComponent(messageRappel(c, s))}">Envoyer un rappel WhatsApp</a>`
+      : `<div class="hint">Ajoute son numéro (bouton Modifier) pour lui envoyer un rappel WhatsApp.</div>`) : ""}
+    <section class="card">
+      <div class="label" style="margin-bottom:6px">Historique</div>
+      <div class="hist">${mvs.length ? mvs.map(m => `
+        <div class="mv"><div class="what"><b>${m.type === "credit" ? "Crédit" : "Paiement" + (m.moyen ? " · " + esc(m.moyen) : "")}</b>
+          <small>${fmtDate(m.date)}${m.note ? " · " + esc(m.note) : ""}</small>
+          <button class="del" data-del="${m.id}">Supprimer</button></div>
+          <div class="amount ${m.type === "credit" ? "due" : "ok"}">${m.type === "credit" ? "+" : "−"} ${fcfa(m.montant)}</div></div>`).join("")
+        : `<div class="empty">Aucun mouvement pour l'instant.</div>`}</div>
+    </section>`;
+  $("#back").onclick = () => location.hash = "accueil";
+  $("#edit").onclick = () => formClient(c);
+  $("#addCredit").onclick = () => formMouvement(c, "credit");
+  $("#addPay").onclick = () => formMouvement(c, "paiement");
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => confirmer("Supprimer ce mouvement ?", "Supprimer", () => {
+    S.mouvements = S.mouvements.filter(m => m.id !== b.dataset.del); save(); route(); toast("Mouvement supprimé");
+  }));
+}
+function messageRappel(c, s){
+  let t = `Bonjour ${c.nom}, c'est ${S.boutique || "la boutique"}. Petit rappel : il reste ${fcfa(s)} à régler.`;
+  if (S.lienPaiement) t += ` Tu peux payer par Wave ici : ${S.lienPaiement}`;
+  return t + " Merci !";
+}
+
+/* ================= Fenêtres de saisie ================= */
+function sheet(html, onReady){
+  const bg = document.createElement("div"); bg.className = "sheet-bg";
+  bg.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
+  bg.addEventListener("click", e => { if (e.target === bg) bg.remove(); });
+  document.body.appendChild(bg);
+  const close = () => bg.remove();
+  onReady(bg, close);
+  const first = bg.querySelector("input"); if (first) setTimeout(() => first.focus(), 50);
+}
+function formClient(c){
+  const edit = !!c;
+  sheet(`
+    <h2>${edit ? "Modifier le client" : "Nouveau client"}</h2>
+    <div class="field"><label for="fNom">Nom *</label><input id="fNom" autocomplete="off" value="${esc(c?.nom)}"></div>
+    <div class="field"><label for="fTel">Téléphone (pour WhatsApp)</label><input id="fTel" type="tel" inputmode="tel" placeholder="07 00 00 00 00" value="${esc(c?.tel)}"></div>
+    <div class="field"><label for="fQ">Quartier</label><input id="fQ" value="${esc(c?.quartier)}"></div>
+    <button class="btn primary block" id="ok">${edit ? "Enregistrer" : "Ajouter le client"}</button>
+    ${edit ? `<button class="btn danger block" id="delC">Supprimer ce client</button>` : ""}
+    <button class="btn ghost block" id="cancel">Annuler</button>`, (bg, close) => {
+    bg.querySelector("#cancel").onclick = close;
+    bg.querySelector("#ok").onclick = () => {
+      const nom = bg.querySelector("#fNom").value.trim();
+      if (!nom) { toast("Écris le nom du client."); return; }
+      const tel = bg.querySelector("#fTel").value.trim(), quartier = bg.querySelector("#fQ").value.trim();
+      if (edit) Object.assign(c, { nom, tel, quartier });
+      else { const n = { id: uid(), nom, tel, quartier, cree: new Date().toISOString() }; S.clients.push(n); c = n; }
+      save(); close(); toast(edit ? "Client modifié" : "Client ajouté");
+      location.hash = "client/" + c.id; route();
+    };
+    if (edit) bg.querySelector("#delC").onclick = () => { close(); confirmer(`Supprimer ${c.nom} et tout son historique ?`, "Supprimer", () => {
+      S.clients = S.clients.filter(x => x.id !== c.id); S.mouvements = S.mouvements.filter(m => m.clientId !== c.id);
+      save(); location.hash = "accueil"; toast("Client supprimé");
+    }); };
+  });
+}
+function formMouvement(c, type){
+  const credit = type === "credit";
+  sheet(`
+    <h2>${credit ? "Vente à crédit" : "Paiement reçu"} · ${esc(c.nom)}</h2>
+    <div class="field money"><label for="fM">Montant (FCFA) *</label><input id="fM" inputmode="numeric" placeholder="0"></div>
+    ${credit ? "" : `<div class="field"><label>Payé par</label><div class="chips" id="moy">${MOYENS.map((m, i) => `<button type="button" class="chip" aria-pressed="${i === 0}">${m}</button>`).join("")}</div></div>`}
+    <div class="field"><label for="fN">${credit ? "Ce qu'il a pris (facultatif)" : "Référence ou note (facultatif)"}</label><input id="fN" placeholder="${credit ? "Ex. : riz 25 kg, huile" : "Ex. : n° de transaction Wave"}"></div>
+    <button class="btn ${credit ? "orange" : "primary"} block" id="ok">${credit ? "Enregistrer le crédit" : "Enregistrer le paiement"}</button>
+    <button class="btn ghost block" id="cancel">Annuler</button>`, (bg, close) => {
+    const fm = bg.querySelector("#fM");
+    fm.addEventListener("input", () => { const n = parseMoney(fm.value); fm.value = n ? n.toLocaleString("fr-FR").replace(/ | /g, " ") : ""; });
+    const moy = bg.querySelector("#moy");
+    if (moy) moy.addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; moy.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); });
+    bg.querySelector("#cancel").onclick = close;
+    bg.querySelector("#ok").onclick = () => {
+      const montant = parseMoney(fm.value);
+      if (!montant) { toast("Écris un montant."); return; }
+      const moyen = credit ? "" : (moy.querySelector('[aria-pressed="true"]')?.textContent || "Espèces");
+      S.mouvements.push({ id: uid(), clientId: c.id, type, montant, moyen, note: bg.querySelector("#fN").value.trim(), date: new Date().toISOString() });
+      save(); close(); route();
+      toast(credit ? `Crédit de ${fcfa(montant)} noté` : `Paiement de ${fcfa(montant)} noté`);
+    };
+  });
+}
+function confirmer(question, verbe, action){
+  sheet(`<h2>${esc(question)}</h2><p class="hint">Cette action ne peut pas être annulée.</p>
+    <button class="btn danger block" id="yes">${esc(verbe)}</button><button class="btn ghost block" id="no">Annuler</button>`, (bg, close) => {
+    bg.querySelector("#no").onclick = close;
+    bg.querySelector("#yes").onclick = () => { close(); action(); };
+  });
+}
+
+/* ================= Écran : Rapport ================= */
+let jourRapport = today();
+function viewRapport(){
+  const j = jourRapport, mois = j.slice(0, 7);
+  const duJour = S.mouvements.filter(m => dayOf(m.date) === j);
+  const duMois = S.mouvements.filter(m => (m.date || "").slice(0, 7) === mois);
+  const sum = (arr, f) => arr.filter(f).reduce((s, m) => s + m.montant, 0);
+  const parMoyen = arr => MOYENS.map(mo => [mo, sum(arr, m => m.type === "paiement" && (m.moyen || "Espèces") === mo)]);
+  const top = S.clients.map(c => ({ c, s: solde(c.id) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 5);
+  const moisNom = new Date(mois + "-01T12:00:00").toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  $("#app").innerHTML = `
+    <header class="top"><h1>Rapport</h1></header>
+    <div class="field"><label for="jr">Jour</label><input id="jr" type="date" value="${j}" max="${today()}" style="padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)"></div>
+    <section class="card">
+      <div class="label">Ce jour-là</div>
+      <table class="rep">
+        <tr><td>Donné à crédit</td><td class="due">${fcfa(sum(duJour, m => m.type === "credit"))}</td></tr>
+        <tr><td>Paiements reçus</td><td class="ok">${fcfa(sum(duJour, m => m.type === "paiement"))}</td></tr>
+        ${parMoyen(duJour).filter(x => x[1]).map(([mo, v]) => `<tr><td>&nbsp;&nbsp;dont ${mo}</td><td>${fcfa(v)}</td></tr>`).join("")}
+      </table>
+    </section>
+    <section class="card">
+      <div class="label">Mois de ${esc(moisNom)}</div>
+      <table class="rep">
+        <tr><td>Donné à crédit</td><td class="due">${fcfa(sum(duMois, m => m.type === "credit"))}</td></tr>
+        <tr><td>Paiements reçus</td><td class="ok">${fcfa(sum(duMois, m => m.type === "paiement"))}</td></tr>
+        ${parMoyen(duMois).filter(x => x[1]).map(([mo, v]) => `<tr><td>&nbsp;&nbsp;dont ${mo}</td><td>${fcfa(v)}</td></tr>`).join("")}
+      </table>
+    </section>
+    <section class="card">
+      <div class="label">Ceux qui doivent le plus</div>
+      ${top.length ? `<table class="rep">${top.map(x => `<tr><td><a href="#client/${x.c.id}" style="color:inherit">${esc(x.c.nom)}</a></td><td class="due">${fcfa(x.s)}</td></tr>`).join("")}</table>` : `<div class="empty">Personne ne te doit d'argent.</div>`}
+    </section>`;
+  $("#jr").onchange = e => { jourRapport = e.target.value || today(); viewRapport(); };
+}
+
+/* ================= Écran : Réglages ================= */
+function viewReglages(){
+  const last = S.derniereSauvegarde ? new Date(S.derniereSauvegarde).toLocaleDateString("fr-FR") : "jamais";
+  $("#app").innerHTML = `
+    <header class="top"><h1>Réglages</h1></header>
+    <section class="card" style="display:flex;flex-direction:column;gap:12px">
+      <div class="field"><label for="sB">Nom de ta boutique</label><input id="sB" value="${esc(S.boutique)}" placeholder="Ex. : Boutique Chez Awa"></div>
+      <div class="field"><label for="sL">Ton lien de paiement Wave (facultatif)</label><input id="sL" value="${esc(S.lienPaiement)}" placeholder="https://pay.wave.com/…"><span class="hint">Il sera ajouté aux rappels WhatsApp pour que le client paie directement.</span></div>
+      <button class="btn primary block" id="saveS">Enregistrer</button>
+    </section>
+    <section class="card" style="display:flex;flex-direction:column;gap:10px">
+      <div class="label">Sauvegarde</div>
+      <div class="hint">Tes données sont gardées seulement sur ce téléphone. Fais une sauvegarde chaque semaine et envoie-la-toi sur WhatsApp ou par e-mail. Dernière sauvegarde : <b>${last}</b>.</div>
+      <button class="btn ghost block" id="exp">Télécharger une sauvegarde</button>
+      <button class="btn ghost block" id="csv">Télécharger pour Excel (CSV)</button>
+      <label class="btn ghost block" for="imp">Restaurer une sauvegarde</label>
+      <input type="file" id="imp" accept="application/json,.json" hidden>
+    </section>
+    <section class="card" style="display:flex;flex-direction:column;gap:10px">
+      <div class="label">Installer sur le téléphone</div>
+      <div class="hint">Dans Chrome : menu ⋮ puis « Ajouter à l'écran d'accueil ». L'appli marche ensuite sans internet.</div>
+      <button class="btn danger block" id="wipe">Tout effacer</button>
+    </section>`;
+  $("#saveS").onclick = () => { S.boutique = $("#sB").value.trim(); S.lienPaiement = $("#sL").value.trim(); save(); toast("Réglages enregistrés"); };
+  $("#exp").onclick = () => {
+    S.derniereSauvegarde = new Date().toISOString(); save();
+    telecharger(`mon-carnet-sauvegarde-${today()}.json`, JSON.stringify(S, null, 1), "application/json");
+    viewReglages();
+  };
+  $("#csv").onclick = () => {
+    const nom = id => S.clients.find(c => c.id === id)?.nom || "";
+    const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lignes = [["Date", "Client", "Type", "Montant FCFA", "Payé par", "Note"].map(q).join(";")]
+      .concat(S.mouvements.slice().sort((a, b) => a.date.localeCompare(b.date))
+        .map(m => [m.date.slice(0, 16).replace("T", " "), nom(m.clientId), m.type === "credit" ? "Crédit" : "Paiement", m.montant, m.moyen, m.note].map(q).join(";")));
+    telecharger(`mon-carnet-${today()}.csv`, "﻿" + lignes.join("\n"), "text/csv");
+  };
+  $("#imp").onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const d = JSON.parse(r.result);
+        if (!d || !Array.isArray(d.clients) || !Array.isArray(d.mouvements)) throw 0;
+        confirmer(`Remplacer ton carnet actuel par cette sauvegarde (${d.clients.length} clients) ?`, "Restaurer", () => { S = d; save(); toast("Sauvegarde restaurée"); location.hash = "accueil"; });
+      } catch (err) { toast("Ce fichier n'est pas une sauvegarde Mon Carnet."); }
+    };
+    r.readAsText(f);
+  };
+  $("#wipe").onclick = () => confirmer("Effacer tous les clients et tout l'historique ?", "Tout effacer", () => {
+    S = { boutique: S.boutique, lienPaiement: S.lienPaiement, clients: [], mouvements: [], derniereSauvegarde: null }; save(); toast("Carnet vidé"); location.hash = "accueil";
+  });
+}
+function telecharger(nom, contenu, type){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([contenu], { type }));
+  a.download = nom; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ================= Démarrage ================= */
+route();
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

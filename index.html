@@ -97,7 +97,7 @@ table.rep td:last-child{text-align:right;font-weight:700}
 <script>
 "use strict";
 /* ================= Données (gardées sur le téléphone) ================= */
-const VERSION = "1.1";
+const VERSION = "1.2";
 const KEY = "mon-carnet-v1";
 const MOYENS = ["Espèces", "Wave", "Orange Money", "MTN MoMo", "Moov Money"];
 let S = load();
@@ -242,7 +242,14 @@ function viewClient(id){
   }));
 }
 function messageRappel(c, s){
-  return `Bonjour ${c.nom}, c'est ${S.boutique || "la boutique"}. Petit rappel : il reste ${fcfa(s)} à régler. Merci !`;
+  const wave = S.numeroWave ? ` Tu peux payer par Wave au ${S.numeroWave}.` : "";
+  return `Bonjour ${c.nom}, c'est ${S.boutique || "la boutique"}. Petit rappel : il reste ${fcfa(s)} à régler.${wave} Merci !`;
+}
+/* « 0505320662 » ou « +225 05 05 32 06 62 » → « 05 05 32 06 62 » */
+function joliNumero(v){
+  let d = String(v || "").replace(/[^\d]/g, "");
+  if (d.length === 13 && d.startsWith("225")) d = d.slice(3);
+  return d.length === 10 ? d.replace(/(\d\d)(?=\d)/g, "$1 ") : String(v || "").trim();
 }
 
 /* ================= Fenêtres de saisie ================= */
@@ -361,6 +368,8 @@ function viewReglages(){
     <header class="top"><h1>Réglages</h1></header>
     <section class="card" style="display:flex;flex-direction:column;gap:12px">
       <div class="field"><label for="sB">Nom de ta boutique</label><input id="sB" value="${esc(S.boutique)}" placeholder="Ex. : Boutique Chez Awa"></div>
+      <div class="field"><label for="sW">Ton numéro Wave (facultatif)</label><input id="sW" type="tel" inputmode="tel" value="${esc(S.numeroWave)}" placeholder="05 05 00 00 00">
+        <span class="hint" id="sWex"></span></div>
       <button class="btn primary block" id="saveS">Enregistrer</button>
     </section>
     <section class="card" style="display:flex;flex-direction:column;gap:10px">
@@ -377,7 +386,12 @@ function viewReglages(){
       <button class="btn danger block" id="wipe">Tout effacer</button>
     </section>
     <p class="hint" style="text-align:center">Mon Carnet · version ${VERSION}</p>`;
-  $("#saveS").onclick = () => { S.boutique = $("#sB").value.trim(); save(); toast("Réglages enregistrés"); };
+  $("#saveS").onclick = () => { S.boutique = $("#sB").value.trim(); S.numeroWave = joliNumero($("#sW").value); save(); viewReglages(); toast("Réglages enregistrés"); };
+  const exWave = () => {
+    const n = joliNumero($("#sW").value);
+    $("#sWex").textContent = n ? `Dans les rappels WhatsApp : « Tu peux payer par Wave au ${n}. »` : "Si tu le mets, il sera ajouté aux rappels WhatsApp pour que le client paie par Wave.";
+  };
+  $("#sW").addEventListener("input", exWave); exWave();
   $("#exp").onclick = () => {
     S.derniereSauvegarde = new Date().toISOString(); save();
     telecharger(`mon-carnet-sauvegarde-${today()}.json`, JSON.stringify(S, null, 1), "application/json");
@@ -404,7 +418,7 @@ function viewReglages(){
     r.readAsText(f);
   };
   $("#wipe").onclick = () => confirmer("Effacer tous les clients et tout l'historique ?", "Tout effacer", () => {
-    S = { boutique: S.boutique, clients: [], mouvements: [], derniereSauvegarde: null }; save(); toast("Carnet vidé"); location.hash = "accueil";
+    S = { boutique: S.boutique, numeroWave: S.numeroWave, clients: [], mouvements: [], derniereSauvegarde: null }; save(); toast("Carnet vidé"); location.hash = "accueil";
   });
 }
 function telecharger(nom, contenu, type){

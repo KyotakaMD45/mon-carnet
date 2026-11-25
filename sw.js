@@ -1,5 +1,5 @@
 // Mon Carnet – fonctionne sans internet après la première ouverture.
-const CACHE = "mon-carnet-v1";
+const CACHE = "mon-carnet-1.1";
 const FILES = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", e => {

@@ -79,6 +79,17 @@ nav.bar svg{display:block;margin:0 auto 2px;width:24px;height:24px}
 table.rep{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 table.rep td{padding:8px 0;border-bottom:1px solid var(--line)}
 table.rep td:last-child{text-align:right;font-weight:700}
+.big-btn{padding:17px 16px;font-size:1.05rem}
+.welcome p{color:var(--muted)}
+.steps{margin:0 0 16px;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.banner{background:var(--orange-soft);border:1px solid var(--orange);border-radius:12px;padding:10px 12px;font-size:.92rem}
+.linkbtn{background:none;border:0;color:var(--green);font-weight:700;text-decoration:underline;cursor:pointer;padding:0 2px}
+.guide{display:flex;flex-direction:column;gap:8px}
+.progress{height:8px;background:var(--bg);border-radius:99px;overflow:hidden}
+.progress span{display:block;height:100%;background:var(--green);border-radius:99px}
+.gstep{color:var(--muted)} .gstep.ok{color:var(--green);font-weight:600}
+.chips.quick{margin-top:4px}
+.chips.quick .chip{padding:8px 12px;font-size:.9rem}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -89,7 +100,7 @@ table.rep td:last-child{text-align:right;font-weight:700}
 
 <nav class="bar" id="nav">
   <a href="#accueil" data-r="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Clients</a>
-  <a href="#rapport" data-r="rapport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Rapport</a>
+  <a href="#rapport" data-r="rapport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Résumé</a>
   <a href="#reglages" data-r="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Réglages</a>
 </nav>
 
@@ -163,8 +174,30 @@ function viewAccueil(){
   const t = today();
   const encaisse = S.mouvements.filter(m => m.type === "paiement" && dayOf(m.date) === t).reduce((s, m) => s + m.montant, 0);
   const credite = S.mouvements.filter(m => m.type === "credit" && dayOf(m.date) === t).reduce((s, m) => s + m.montant, 0);
+  if (!S.clients.length) {
+    $("#fab").hidden = true;
+    $("#app").innerHTML = `
+      <header class="top"><div><h1>Mon Carnet</h1><div class="shop">${esc(S.boutique || "Ma boutique")}</div></div></header>
+      <section class="card welcome">
+        <div style="font-size:1.25rem;font-weight:800">Bienvenue 👋</div>
+        <p style="margin:6px 0 14px">Mon Carnet remplace ton cahier de crédit. Il calcule tout seul qui te doit combien, et envoie les rappels sur WhatsApp.</p>
+        <ol class="steps">
+          <li><b>Ajoute un client</b> qui te doit de l'argent</li>
+          <li><b>Note ce qu'il a pris</b> à crédit</li>
+          <li><b>Envoie-lui un rappel</b> WhatsApp</li>
+        </ol>
+        <button class="btn primary block big-btn" id="start">Ajouter mon premier client</button>
+        <button class="btn ghost block" id="demo" style="margin-top:10px">Voir un exemple d'abord</button>
+      </section>`;
+    $("#start").onclick = () => formClient();
+    $("#demo").onclick = chargerExemple;
+    return;
+  }
+  const aDemo = S.clients.some(c => c.demo);
   $("#app").innerHTML = `
     <header class="top"><div><h1>Mon Carnet</h1><div class="shop">${esc(S.boutique || "Ma boutique")}</div></div></header>
+    ${aDemo ? `<div class="banner">Ce sont des <b>faux clients</b> pour essayer. <button class="linkbtn" id="clearDemo">Effacer l'exemple</button></div>` : ""}
+    ${guideHTML()}
     <section class="card">
       <div class="label">On te doit au total</div>
       <div class="big due" id="totalDu">${fcfa(totalDu)}</div>
@@ -177,7 +210,48 @@ function viewAccueil(){
     <input class="search" id="q" type="search" placeholder="Chercher un client…" value="${esc(recherche)}" aria-label="Chercher un client">
     <div class="list" id="liste"></div>`;
   $("#q").addEventListener("input", e => { recherche = e.target.value; listeClients(); });
+  if (aDemo) $("#clearDemo").onclick = effacerExemple;
+  const gh = $("#hideGuide"); if (gh) gh.onclick = () => { S.guideMasque = true; save(); route(); };
   listeClients();
+}
+
+/* ---- Guide des 3 premières étapes ---- */
+function guideHTML(){
+  if (S.guideMasque) return "";
+  const vrais = S.clients.filter(c => !c.demo);
+  const ids = new Set(vrais.map(c => c.id));
+  const steps = [
+    ["Ajoute un client", vrais.length > 0],
+    ["Note ce qu'il a pris à crédit", S.mouvements.some(m => ids.has(m.clientId) && m.type === "credit")],
+    ["Envoie-lui un rappel WhatsApp", !!S.rappelEnvoye]
+  ];
+  const done = steps.filter(s => s[1]).length;
+  if (done === steps.length) return "";
+  return `<section class="card guide">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Pour bien démarrer : ${done}/3</b><button class="linkbtn" id="hideGuide">Masquer</button></div>
+    <div class="progress"><span style="width:${Math.round(done / 3 * 100)}%"></span></div>
+    ${steps.map(([t, ok]) => `<div class="gstep ${ok ? "ok" : ""}">${ok ? "✓" : "○"} ${t}</div>`).join("")}
+  </section>`;
+}
+
+/* ---- Exemple (faux clients pour essayer) ---- */
+function chargerExemple(){
+  const h = n => new Date(Date.now() - n * 3600e3).toISOString();
+  const a = { id: uid(), nom: "Awa (exemple)", tel: "", quartier: "Adjamé", demo: true, cree: h(48) };
+  const b = { id: uid(), nom: "Yao (exemple)", tel: "", quartier: "Yopougon", demo: true, cree: h(30) };
+  S.clients.push(a, b);
+  S.mouvements.push(
+    { id: uid(), clientId: a.id, type: "credit", montant: 15000, moyen: "", note: "Riz 25 kg", date: h(40) },
+    { id: uid(), clientId: a.id, type: "paiement", montant: 5000, moyen: "Wave", note: "", date: h(3) },
+    { id: uid(), clientId: b.id, type: "credit", montant: 8000, moyen: "", note: "Huile + sucre", date: h(20) }
+  );
+  save(); route(); toast("Exemple chargé : touche un client pour voir");
+}
+function effacerExemple(){
+  const ids = new Set(S.clients.filter(c => c.demo).map(c => c.id));
+  S.clients = S.clients.filter(c => !c.demo);
+  S.mouvements = S.mouvements.filter(m => !ids.has(m.clientId));
+  save(); route(); toast("Exemple effacé");
 }
 function listeClients(){
   const q = recherche.trim().toLowerCase();
@@ -212,12 +286,12 @@ function viewClient(id){
     <section class="card">
       <div class="row" style="align-items:center"><span class="avatar" style="flex:none">${esc(initials(c.nom))}</span>
         <div style="flex:5"><div style="font-weight:800;font-size:1.2rem">${esc(c.nom)}</div><div class="hint">${esc([c.tel, c.quartier].filter(Boolean).join(" · ") || "Pas de téléphone")}</div></div></div>
-      <div class="label" style="margin-top:14px">${s >= 0 ? "Il te doit" : "Il a payé en avance"}</div>
+      <div class="label" style="margin-top:14px">${s > 0 ? "Il te doit" : s < 0 ? "Il a payé en avance" : "Il ne te doit rien"}</div>
       <div class="big ${s > 0 ? "due" : "ok"}">${fcfa(Math.abs(s))}</div>
     </section>
     <div class="row">
-      <button class="btn orange" id="addCredit">+ Crédit</button>
-      <button class="btn primary" id="addPay">Paiement reçu</button>
+      <button class="btn orange big-btn" id="addCredit">Il prend à crédit</button>
+      <button class="btn primary big-btn" id="addPay">Il a payé</button>
     </div>
     ${s > 0 ? (num
       ? `<a class="btn wa block" id="rappel" target="_blank" rel="noopener" href="https://wa.me/${num}?text=${encodeURIComponent(messageRappel(c, s))}">Envoyer un rappel WhatsApp</a>`
@@ -235,6 +309,7 @@ function viewClient(id){
   $("#edit").onclick = () => formClient(c);
   $("#addCredit").onclick = () => formMouvement(c, "credit");
   $("#addPay").onclick = () => formMouvement(c, "paiement");
+  const rp = $("#rappel"); if (rp) rp.addEventListener("click", () => { if (!c.demo && !S.rappelEnvoye) { S.rappelEnvoye = true; save(); } });
   document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => confirmer("Supprimer ce mouvement ?", "Supprimer", () => {
     S.mouvements = S.mouvements.filter(m => m.id !== b.dataset.del); save(); route(); toast("Mouvement supprimé");
   }));
@@ -265,18 +340,25 @@ function formClient(c){
     <h2>${edit ? "Modifier le client" : "Nouveau client"}</h2>
     <div class="field"><label for="fNom">Nom *</label><input id="fNom" autocomplete="off" value="${esc(c?.nom)}"></div>
     <div class="field"><label for="fTel">Téléphone (pour WhatsApp)</label><input id="fTel" type="tel" inputmode="tel" placeholder="07 00 00 00 00" value="${esc(c?.tel)}"></div>
-    <div class="field"><label for="fQ">Quartier</label><input id="fQ" value="${esc(c?.quartier)}"></div>
-    <button class="btn primary block" id="ok">${edit ? "Enregistrer" : "Ajouter le client"}</button>
+    <div class="field"><label for="fQ">Quartier (facultatif)</label><input id="fQ" value="${esc(c?.quartier)}"></div>
+    ${edit ? "" : `<div class="field money"><label for="fM">Il prend à crédit maintenant ? (facultatif)</label><input id="fM" inputmode="numeric" placeholder="Montant en FCFA">${quickAmounts()}</div>`}
+    <button class="btn primary block big-btn" id="ok">${edit ? "Enregistrer" : "Ajouter le client"}</button>
     ${edit ? `<button class="btn danger block" id="delC">Supprimer ce client</button>` : ""}
     <button class="btn ghost block" id="cancel">Annuler</button>`, (bg, close) => {
     bg.querySelector("#cancel").onclick = close;
+    if (!edit) wireAmount(bg);
     bg.querySelector("#ok").onclick = () => {
       const nom = bg.querySelector("#fNom").value.trim();
       if (!nom) { toast("Écris le nom du client."); return; }
       const tel = bg.querySelector("#fTel").value.trim(), quartier = bg.querySelector("#fQ").value.trim();
+      let montant = 0;
       if (edit) Object.assign(c, { nom, tel, quartier });
-      else { const n = { id: uid(), nom, tel, quartier, cree: new Date().toISOString() }; S.clients.push(n); c = n; }
-      save(); close(); toast(edit ? "Client modifié" : "Client ajouté");
+      else {
+        const n = { id: uid(), nom, tel, quartier, cree: new Date().toISOString() }; S.clients.push(n); c = n;
+        montant = parseMoney(bg.querySelector("#fM").value);
+        if (montant) S.mouvements.push({ id: uid(), clientId: n.id, type: "credit", montant, moyen: "", note: "", date: new Date().toISOString() });
+      }
+      save(); close(); toast(edit ? "Client modifié" : montant ? `${nom} ajouté, crédit de ${fcfa(montant)} noté` : "Client ajouté");
       location.hash = "client/" + c.id; route();
     };
     if (edit) bg.querySelector("#delC").onclick = () => { close(); confirmer(`Supprimer ${c.nom} et tout son historique ?`, "Supprimer", () => {
@@ -288,14 +370,13 @@ function formClient(c){
 function formMouvement(c, type){
   const credit = type === "credit";
   sheet(`
-    <h2>${credit ? "Vente à crédit" : "Paiement reçu"} · ${esc(c.nom)}</h2>
-    <div class="field money"><label for="fM">Montant (FCFA) *</label><input id="fM" inputmode="numeric" placeholder="0"></div>
+    <h2>${esc(c.nom)} ${credit ? "prend à crédit" : "a payé"}</h2>
+    <div class="field money"><label for="fM">Combien ? (FCFA)</label><input id="fM" inputmode="numeric" placeholder="0">${quickAmounts()}</div>
     ${credit ? "" : `<div class="field"><label>Payé par</label><div class="chips" id="moy">${MOYENS.map((m, i) => `<button type="button" class="chip" aria-pressed="${i === 0}">${m}</button>`).join("")}</div></div>`}
     <div class="field"><label for="fN">${credit ? "Ce qu'il a pris (facultatif)" : "Référence ou note (facultatif)"}</label><input id="fN" placeholder="${credit ? "Ex. : riz 25 kg, huile" : "Ex. : n° de transaction Wave"}"></div>
     <button class="btn ${credit ? "orange" : "primary"} block" id="ok">${credit ? "Enregistrer le crédit" : "Enregistrer le paiement"}</button>
     <button class="btn ghost block" id="cancel">Annuler</button>`, (bg, close) => {
-    const fm = bg.querySelector("#fM");
-    fm.addEventListener("input", () => { const n = parseMoney(fm.value); fm.value = n ? n.toLocaleString("fr-FR").replace(/ | /g, " ") : ""; });
+    const fm = wireAmount(bg);
     const moy = bg.querySelector("#moy");
     if (moy) moy.addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; moy.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); });
     bg.querySelector("#cancel").onclick = close;
@@ -308,6 +389,17 @@ function formMouvement(c, type){
       toast(credit ? `Crédit de ${fcfa(montant)} noté` : `Paiement de ${fcfa(montant)} noté`);
     };
   });
+}
+/* Boutons de montant rapide : un appui ajoute la somme */
+function quickAmounts(){
+  return `<div class="chips quick">${[500, 1000, 2000, 5000, 10000].map(v => `<button type="button" class="chip" data-add="${v}">+ ${v.toLocaleString("fr-FR").replace(/ | /g, " ")}</button>`).join("")}</div>`;
+}
+function wireAmount(bg){
+  const fm = bg.querySelector("#fM");
+  const fmt = n => n ? n.toLocaleString("fr-FR").replace(/ | /g, " ") : "";
+  fm.addEventListener("input", () => { fm.value = fmt(parseMoney(fm.value)); });
+  bg.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { fm.value = fmt(parseMoney(fm.value) + Number(b.dataset.add)); });
+  return fm;
 }
 function confirmer(question, verbe, action){
   sheet(`<h2>${esc(question)}</h2><p class="hint">Cette action ne peut pas être annulée.</p>
@@ -328,7 +420,7 @@ function viewRapport(){
   const top = S.clients.map(c => ({ c, s: solde(c.id) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 5);
   const moisNom = new Date(mois + "-01T12:00:00").toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   $("#app").innerHTML = `
-    <header class="top"><h1>Rapport</h1></header>
+    <header class="top"><h1>Résumé</h1></header>
     <div class="field"><label for="jr">Jour</label><input id="jr" type="date" value="${j}" max="${today()}" style="padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)"></div>
     <section class="card">
       <div class="label">Ce jour-là</div>

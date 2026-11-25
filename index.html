@@ -241,7 +241,11 @@ function viewClient(id){
 }
 function messageRappel(c, s){
   let t = `Bonjour ${c.nom}, c'est ${S.boutique || "la boutique"}. Petit rappel : il reste ${fcfa(s)} à régler.`;
-  if (S.lienPaiement) t += ` Tu peux payer par Wave ici : ${S.lienPaiement}`;
+  const moyens = (S.moyensAcceptes || []).filter(m => m !== "Espèces");
+  if (S.numeroPaiement && moyens.length) {
+    const liste = moyens.length > 1 ? moyens.slice(0, -1).join(", ") + " ou " + moyens.at(-1) : moyens[0];
+    t += ` Tu peux payer par ${liste} au ${S.numeroPaiement}.`;
+  } else if (S.lienPaiement) t += ` Tu peux payer par Wave ici : ${S.lienPaiement}`;
   return t + " Merci !";
 }
 
@@ -356,7 +360,9 @@ function viewReglages(){
     <header class="top"><h1>Réglages</h1></header>
     <section class="card" style="display:flex;flex-direction:column;gap:12px">
       <div class="field"><label for="sB">Nom de ta boutique</label><input id="sB" value="${esc(S.boutique)}" placeholder="Ex. : Boutique Chez Awa"></div>
-      <div class="field"><label for="sL">Ton lien de paiement Wave (facultatif)</label><input id="sL" value="${esc(S.lienPaiement)}" placeholder="https://pay.wave.com/…"><span class="hint">Il sera ajouté aux rappels WhatsApp pour que le client paie directement.</span></div>
+      <div class="field"><label for="sN">Ton numéro pour recevoir les paiements (facultatif)</label><input id="sN" type="tel" inputmode="tel" value="${esc(S.numeroPaiement)}" placeholder="07 00 00 00 00"></div>
+      <div class="field"><label>Sur ce numéro, tu reçois par</label><div class="chips" id="sM">${MOYENS.filter(m => m !== "Espèces").map(m => `<button type="button" class="chip" aria-pressed="${(S.moyensAcceptes || []).includes(m)}">${m}</button>`).join("")}</div>
+        <span class="hint" id="sEx">Exemple dans le rappel : « Tu peux payer par Wave ou Orange Money au 07 00 00 00 00. »</span></div>
       <button class="btn primary block" id="saveS">Enregistrer</button>
     </section>
     <section class="card" style="display:flex;flex-direction:column;gap:10px">
@@ -372,7 +378,14 @@ function viewReglages(){
       <div class="hint">Dans Chrome : menu ⋮ puis « Ajouter à l'écran d'accueil ». L'appli marche ensuite sans internet.</div>
       <button class="btn danger block" id="wipe">Tout effacer</button>
     </section>`;
-  $("#saveS").onclick = () => { S.boutique = $("#sB").value.trim(); S.lienPaiement = $("#sL").value.trim(); save(); toast("Réglages enregistrés"); };
+  $("#sM").addEventListener("click", e => { const b = e.target.closest(".chip"); if (b) b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true"); });
+  $("#saveS").onclick = () => {
+    S.boutique = $("#sB").value.trim();
+    S.numeroPaiement = $("#sN").value.trim();
+    S.moyensAcceptes = [...document.querySelectorAll('#sM .chip[aria-pressed="true"]')].map(c => c.textContent);
+    if (S.numeroPaiement && !S.moyensAcceptes.length) { toast("Choisis au moins Wave, Orange Money, MTN ou Moov."); return; }
+    save(); toast("Réglages enregistrés");
+  };
   $("#exp").onclick = () => {
     S.derniereSauvegarde = new Date().toISOString(); save();
     telecharger(`mon-carnet-sauvegarde-${today()}.json`, JSON.stringify(S, null, 1), "application/json");
@@ -399,7 +412,7 @@ function viewReglages(){
     r.readAsText(f);
   };
   $("#wipe").onclick = () => confirmer("Effacer tous les clients et tout l'historique ?", "Tout effacer", () => {
-    S = { boutique: S.boutique, lienPaiement: S.lienPaiement, clients: [], mouvements: [], derniereSauvegarde: null }; save(); toast("Carnet vidé"); location.hash = "accueil";
+    S = { boutique: S.boutique, lienPaiement: S.lienPaiement, numeroPaiement: S.numeroPaiement, moyensAcceptes: S.moyensAcceptes, clients: [], mouvements: [], derniereSauvegarde: null }; save(); toast("Carnet vidé"); location.hash = "accueil";
   });
 }
 function telecharger(nom, contenu, type){
